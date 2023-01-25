@@ -94,7 +94,7 @@ int enable_mon(const uint32_t tgid, const uint32_t tid, bool is_process,
     if (pebs_sample_period) {
         /* pebs start */
         pebs_init(&mon[target].pebs_ctx, tid, pebs_sample_period);
-        DEBUG_PRINT("Process [tgid=%u, tid=%u]: enable to pebs.\n",
+        DEBUG_PRINT("%dProcess [tgid=%u, tid=%u]: enable to pebs.\n",target,
                     mon[target].tgid, mon[target].tid);
     }
 
@@ -151,7 +151,7 @@ int set_region_info_mon(struct __monitor *mon, const int nreg, struct __region_i
     for (i = 0; i < nreg; i++) {
         mon->region_info[i].addr = ri[i].addr;
         mon->region_info[i].size = ri[i].size;
-        DEBUG_PRINT("  region info[%d]: addr=%lx, size=%lx\n", i, ri[i].addr, ri[i].size);
+        // DEBUG_PRINT("  region info[%d]: addr=%lx, size=%lx\n", i, ri[i].addr, ri[i].size);
     }
 
     return 0;

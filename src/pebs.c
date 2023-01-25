@@ -100,6 +100,7 @@ pebs_read(struct pebs_context *ctx, const int nreg, struct __region_info *reg_in
 
 	if (mp == MAP_FAILED)
 		return -1;
+	printf("sbsbsbsbsbsbsb");
 
 	int r = 0;
 	int i;
@@ -113,8 +114,10 @@ pebs_read(struct pebs_context *ctx, const int nreg, struct __region_info *reg_in
 		barrier();
 		last_head = mp->data_head;
 
+	printf("%lu %lu start",ctx->rdlen , last_head);
 		while ((uint64_t)ctx->rdlen < last_head) {
 			header = (struct perf_event_header *) (dp + ctx->rdlen % DATA_SIZE);
+	printf("sbsbsbsbsbsbsb");
 
 			switch (header->type) {
 			case PERF_RECORD_LOST:
@@ -162,6 +165,7 @@ pebs_read(struct pebs_context *ctx, const int nreg, struct __region_info *reg_in
 		mp->data_tail = last_head;
 		barrier();
 	} while (mp->lock != ctx->seq);
+	printf("end");
 
 	elem->total = 0;
 	for (i = 0; i < nreg; i++) {
@@ -177,6 +181,7 @@ pebs_start(struct pebs_context *ctx)
 	if (ctx->fd < 0) {
 		return 0;
 	}
+	printf("start%d",ctx->fd);
 	if (ioctl(ctx->fd, PERF_EVENT_IOC_ENABLE, 0) < 0) {
 		perror("ioctl");
 		return -1;

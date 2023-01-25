@@ -1,4 +1,4 @@
-CFLAGS  = -Wall -g -std=c11 -pthread -lrt -rdynamic #-DDEBUG
+CFLAGS  = -Wall -g -std=c11 -pthread -lrt -rdynamic -DDEBUG
 SRC_DIR = ./src
 OBJ_DIR = ./build
 INCLUDE = -I ./src

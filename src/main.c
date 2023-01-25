@@ -159,10 +159,11 @@ int main(int argc, char **argv)
                 usage = true;
         }
     }
+    printf("use_cpus:%lu",use_cpus);
     for (i = 0; i < ncpu; i++) {
         if (!use_cpus || use_cpus & 1UL << i) {
             CPU_SET(i, &use_cpuset);
-            DEBUG_PRINT("use cpuid: %d\n", i);
+            DEBUG_PRINT("use cpuid: %d%lu\n", i,use_cpus);
         }
     }
     tnum = CPU_COUNT(&use_cpuset);
@@ -204,7 +205,7 @@ int main(int argc, char **argv)
     sock = socket(AF_UNIX, SOCK_DGRAM, 0);
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, SOCKET_PATH);
-    remove(addr.sun_path);
+    remove( addr.sun_path);
     if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
         handle_error("Failed to execute. Can't bind to a socket.");
         exit(1);
@@ -228,7 +229,8 @@ int main(int argc, char **argv)
         }
 
         // In case of process, use SIGSTOP.
-        i = enable_mon(t_process, t_process, true, 0, tnum, mons);
+        i = enable_mon(t_process, t_process, true, pebs_sample_period, tnum, mons);
+        printf("ttttqqqqlllll%d",tnum);
         if (i == -1) {
             exit_with_message("Failed to enable monitor\n");
         } else if (i < 0) {
@@ -281,7 +283,6 @@ int main(int argc, char **argv)
             read_cpu_elems(&pmu.cpus[j], &mon->before->cpus[j]);
         }
     }
-
     uint32_t diff_nsec = 0;
     struct timespec start_ts, end_ts;
     struct timespec sleep_start_ts, sleep_end_ts;
@@ -345,7 +346,7 @@ int main(int argc, char **argv)
                 if (opd->opcode == MES_THREAD_CREATE || opd->opcode == MES_PROCESS_CREATE) {
                     int target;
                     bool is_process = (opd->opcode == MES_PROCESS_CREATE) ? true : false;
-                    uint64_t period = (opd->num_of_region >= 2) ? pebs_sample_period : 0 ; // is hybrid
+                    uint64_t period = pebs_sample_period ; // is hybrid
                     // register to monitor
                     target = enable_mon(opd->tgid, opd->tid, is_process, period, tnum, mons);
                     if (target == -1) {
@@ -387,9 +388,16 @@ int main(int argc, char **argv)
                 exit_with_message("received data is invalid size: size=%d\n", n);
             }
         } while (n > 0); // check the next message.
-
+        struct __region_info *ri = malloc(3 * sizeof(struct __region_info));
+        ri[0].addr= 0x8000000;
+        ri[0].size=10000000;
+        ri[1].addr =  0x9000000;
+        ri[1].size= 10000000;
+        ri[2].addr =0x10000000;
+        ri[2].size= 10000000;
+        set_region_info_mon(mon, 3, ri);
 #ifdef VERBOSE_DEBUG
-        clock_gettime(CLOCK_MONOTONIC, &recv_ts);
+            clock_gettime(CLOCK_MONOTONIC, &recv_ts);
         DEBUG_PRINT("recv_ts       : %010lu.%09lu\n", recv_ts.tv_sec, recv_ts.tv_nsec);
         if (recv_ts.tv_nsec < sleep_start_ts.tv_nsec) {
             DEBUG_PRINT("start - recv  : %10lu.%09lu\n", recv_ts.tv_sec - sleep_start_ts.tv_sec - 1, \
@@ -431,6 +439,7 @@ int main(int argc, char **argv)
 #endif
 
         for (i = 0; i < tnum; i++) {
+            printf("%d !!!!",i);
             mon = &mons[i];
             if (mon->status == MONITOR_DISABLE) {
                 continue;
@@ -458,16 +467,16 @@ int main(int argc, char **argv)
                     read_cpu_elems(&pmu.cpus[j], &mon->after->cpus[j]);
                     cpus_dram_rds += mon->after->cpus[j].all_dram_rds - mon->before->cpus[j].all_dram_rds;
                 }
-
-                if (mon->num_of_region >= 2) {
+                // printf("sbsbsb%d",mon->num_of_region);
+                // if (mon->num_of_region >= 2) {
                     /* read PEBS sample */
                     if (pebs_read(&mon->pebs_ctx, mon->num_of_region, mon->region_info, &mon->after->pebs) < 0) {
                         fprintf(stderr, "[%d:%u:%u] Warning: Failed PEBS read\n", i, mon->tgid, mon->tid);
                     }
                     target_llcmiss = mon->after->pebs.llcmiss - mon->before->pebs.llcmiss;
-                } else {
-                    target_llcmiss = mon->after->cpus[mon->cpu_core].cpu_llcl_miss - mon->before->cpus[mon->cpu_core].cpu_llcl_miss;
-                }
+                // } else {
+                //     target_llcmiss = mon->after->cpus[mon->cpu_core].cpu_llcl_miss - mon->before->cpus[mon->cpu_core].cpu_llcl_miss;
+                // }
 
                 target_l2stall = mon->after->cpus[mon->cpu_core].cpu_l2stall_t - mon->before->cpus[mon->cpu_core].cpu_l2stall_t;
                 target_llchits = mon->after->cpus[mon->cpu_core].cpu_llcl_hits - mon->before->cpus[mon->cpu_core].cpu_llcl_hits;
